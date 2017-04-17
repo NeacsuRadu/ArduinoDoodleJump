@@ -26,17 +26,19 @@ struct paddle
 };
 
 paddle paddles[10];
-int8_t first = 0;
-int8_t last = 0;
+
 
 const uint8_t row[8] = {2, 7, 19, 5, 13, 18, 12, 16};
 const uint8_t col[8] = {6, 11, 10, 3, 17, 4, 8, 9};
 
-uint8_t doodleRowCoord = 7;
-uint8_t doodleColCoord = 3;
+int8_t last = 0;
+int8_t doodleRowCoord = 7;
+int8_t doodleColCoord = 3;
 
 int8_t doodleState = 0;
 int8_t distanceBetweenPaddles = 2;
+int8_t sidewaysDirection = 1;
+int8_t horizontalMovement = 0;
 
 long acceleration = 0;
 
@@ -45,18 +47,18 @@ unsigned long doodleJumpStartTime     = 0;
 unsigned long doodleLastUpdateTime    = 0;
 unsigned long doodleLastReadOnSensor  = 0;
 
-unsigned long globalScore = 0;
-unsigned long localScore  = 0;
+long globalScore = 0;
+long localScore  = 0;
+
+bool inGameOverState = true;
 
 void setup() 
 {
     for (int thisPin = 0; thisPin < 8; thisPin++) 
     {
         pinMode(col[thisPin], OUTPUT); pinMode(row[thisPin], OUTPUT);
-        digitalWrite(col[thisPin], HIGH); digitalWrite(row[thisPin], LOW);
     }
-    initGame();
-    Serial.begin(9600);
+    setGameOverState();
 }
 
 // ------------ PADDLES FUNCTIONS ------------------ BEGIN
@@ -92,11 +94,31 @@ void pop_front()
 
 void initGame()
 {
-    push_back(paddle(8, 3));
-    for(int i = 6; i >= 0; i -= 2)
+    last = 0;
+    doodleRowCoord = 7;
+    doodleColCoord = 3;
+    doodleState = 0;
+    distanceBetweenPaddles = 2;
+    sidewaysDirection = 1;
+    horizontalMovement = 0;
+    acceleration = 0;
+    doodleFallStartTime     = 0;
+    doodleJumpStartTime     = 0;
+    doodleLastUpdateTime    = 0;
+    doodleLastReadOnSensor  = 0;
+    globalScore = 0;
+    localScore  = 0;
+    
+    for(int i = 6; i >= -2; i -= 2)
     {
         push_back(generatePaddleBetween(i,i+1,0,7)); 
     }
+    for (int thisPin = 0; thisPin < 8; thisPin++) 
+    {
+        digitalWrite(col[thisPin], HIGH); digitalWrite(row[thisPin], LOW);
+    }
+    
+    startJumpingLittleDoodle();
 }
 
 void startLed(int c, int r)
@@ -110,16 +132,50 @@ void startLed(int c, int r)
 
 void loop() 
 {
-    readSensors();
-    updateObjects();
-    displayObjects();
+    if(!inGameOverState)
+    {
+        displayObjects();
+        readSensors();
+        updateObjects();
+    }
+    else
+    {
+        if(gameShouldStart())
+        {
+            startGame();
+        }
+    }
 }
 
+bool gameShouldStart()
+{
+    int reading = analogRead(YAXIS);
+    return (reading > 900 || reading < 100);
+}
+
+void startGame()
+{
+    inGameOverState = false;
+    initGame();
+}
+
+void enterGameOverState()
+{
+    inGameOverState = true;
+    setGameOverState();
+}
+
+void setGameOverState()
+{
+    for (int thisPin = 0; thisPin < 8; thisPin++) 
+    {
+        digitalWrite(col[thisPin], LOW); digitalWrite(row[thisPin], HIGH);
+    }
+}
 
 void updateObjects()
 {
     updateDoodlePosition();
-    updateDifficulty();
 }
 
 void startJumpingLittleDoodle()
@@ -142,7 +198,7 @@ bool doodleShouldJump()
 
 bool shouldAddMorePaddles()
 {
-    if(paddles[last-1].rowCoord >= distanceBetweenPaddles)
+    if(paddles[last-1].rowCoord >= 0)
     {
         return true;
     }
@@ -151,7 +207,7 @@ bool shouldAddMorePaddles()
 
 void addModePaddles()
 {
-    push_back(generatePaddleBetween(0, distanceBetweenPaddles, 0, 7));
+    push_back(generatePaddleBetween(-distanceBetweenPaddles, 0, 0, 7));
 }
 
 void updatePaddles()
@@ -166,8 +222,22 @@ void updatePaddles()
     }
 }
 
+void updateHorizontalPosition()
+{
+    doodleColCoord += horizontalMovement;
+    if(doodleColCoord == -1)
+    {
+        doodleColCoord = 7;
+    }
+    else if(doodleColCoord == 8)
+    {
+        doodleColCoord = 0;
+    }
+}
+
 void updateDoodlePosition()
 {
+  updateHorizontalPosition();
   if((doodleState & DOODLE_JUMPING))
   {
       if(millis() - doodleJumpStartTime > JUMP_DURATION)
@@ -188,9 +258,9 @@ void updateDoodlePosition()
 
       if(millis() - doodleLastUpdateTime > acceleration)
       {
+          localScore += 5;
           if(doodleRowCoord > 4)
           { 
-              ++localScore;
               --doodleRowCoord;
           }
           else
@@ -206,28 +276,32 @@ void updateDoodlePosition()
   }
   else
   {
-    --localScore;
-    if(doodleShouldJump())
-    {
-       startJumpingLittleDoodle();
-       return;
-    }
+     if(doodleRowCoord == 7)
+     {
+        enterGameOverState();
+     }
+     if(doodleShouldJump())
+     {
+        startJumpingLittleDoodle();
+        return;
+     }
 
-    if(millis() - doodleFallStartTime > SLOW_FALL_DURATION)
-    {
-        acceleration = SLOW_UPDATE_INTERVAL;
-    }
+      if(millis() - doodleFallStartTime > SLOW_FALL_DURATION)
+      {
+         acceleration = SLOW_UPDATE_INTERVAL;
+      }
 
-
-    if(millis() - doodleLastUpdateTime > acceleration)
-    {
-        ++doodleRowCoord;
-        doodleLastUpdateTime = millis();
-    }
+      if(millis() - doodleLastUpdateTime > acceleration)
+      {
+         localScore -= 5;
+         ++doodleRowCoord;
+         doodleLastUpdateTime = millis();
+      }
   }
   if(localScore > globalScore)
   {
       globalScore = localScore;
+      updateDifficulty();
   }
 }
 
@@ -238,9 +312,13 @@ int8_t minn(int8_t m1, int8_t m2)
 
 void updateDifficulty()
 {
+    if(globalScore % 250 == 0)
+    {
+        sidewaysDirection *= (-1);
+    }
     if(globalScore % 100 == 0)
     {
-        distanceBetweenPaddles = minn(5, distanceBetweenPaddles + 1);
+        distanceBetweenPaddles = minn(4, distanceBetweenPaddles + 1);
     }
 }
 
@@ -249,8 +327,11 @@ void displayObjects()
     startLed(doodleColCoord, doodleRowCoord);
     for(int i = 0; i < last; ++i)
     {
-        startLed(paddles[i].colCoord, paddles[i].rowCoord);
-        startLed(paddles[i].colCoord + 1, paddles[i].rowCoord);
+        if(paddles[i].rowCoord >= 0)
+        {
+            startLed(paddles[i].colCoord, paddles[i].rowCoord);
+            startLed(paddles[i].colCoord + 1, paddles[i].rowCoord);
+        }
     }
 }
 
@@ -263,20 +344,20 @@ void readSensors()
 
         if(reading < 100)
         {
-            if(doodleColCoord == 0)
-            {
-                doodleColCoord = 8;
-            }
-            --doodleColCoord;
+            horizontalMovement = -1 * sidewaysDirection;
         }
         else if(reading > 900)
         {
-            if(doodleColCoord == 7)
-            {
-                doodleColCoord = -1;
-            }
-            ++doodleColCoord;
+            horizontalMovement = 1 * sidewaysDirection;
         }
+        else
+        {
+            horizontalMovement = 0;
+        }
+    }
+    else 
+    {
+        horizontalMovement = 0;
     }
 }
 
