@@ -4,17 +4,19 @@
 
 #define JUMP_DURATION 1000 
 
-#define ACCELERATED_JUMP_DURATION 200
+#define ACCELERATED_JUMP_DURATION 300
 #define SLOW_JUMP_DURATION 800
 
 #define SLOW_FALL_DURATION 200
 
 #define IDLE_TIME 200 
 
-#define ACC_UPDATE_INTERVAL 100
-#define SLOW_UPDATE_INTERVAL 200
+#define ACC_UPDATE_INTERVAL 50
+#define SLOW_UPDATE_INTERVAL 100
 
 #define READ_SENSOR_INTERVAL 100
+
+#define TIME_TO_START 500
 
 #define YAXIS A0
 
@@ -46,6 +48,7 @@ unsigned long doodleFallStartTime     = 0;
 unsigned long doodleJumpStartTime     = 0;
 unsigned long doodleLastUpdateTime    = 0;
 unsigned long doodleLastReadOnSensor  = 0;
+unsigned long startGameTime = 0;
 
 long globalScore = 0;
 long localScore  = 0;
@@ -150,7 +153,23 @@ void loop()
 bool gameShouldStart()
 {
     int reading = analogRead(YAXIS);
-    return (reading > 900 || reading < 100);
+    if(reading > 900 || reading < 100)
+    {
+        if(startGameTime == 0)
+        {
+            startGameTime = millis();
+        }
+        if(millis() - startGameTime > TIME_TO_START)
+        {
+            startGameTime = 0;
+            return true;
+        }
+    }
+    else 
+    {
+        startGameTime = 0;
+    }
+    return false;
 }
 
 void startGame()
@@ -316,9 +335,9 @@ void updateDifficulty()
     {
         sidewaysDirection *= (-1);
     }
-    if(globalScore % 100 == 0)
+    if(globalScore % 200 == 0)
     {
-        distanceBetweenPaddles = minn(4, distanceBetweenPaddles + 1);
+        distanceBetweenPaddles = minn(10, distanceBetweenPaddles + 1);
     }
 }
 
