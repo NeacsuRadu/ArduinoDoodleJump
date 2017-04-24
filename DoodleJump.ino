@@ -2,17 +2,17 @@
 #define DOODLE_JUMPING 1 
 #define DOODLE_IDLE 2
 
-#define JUMP_DURATION 1000 
+#define JUMP_DURATION 2000 
 
-#define ACCELERATED_JUMP_DURATION 300
-#define SLOW_JUMP_DURATION 800
+#define ACCELERATED_JUMP_DURATION 600
+#define SLOW_JUMP_DURATION 1800
 
 #define SLOW_FALL_DURATION 200
 
 #define IDLE_TIME 200 
 
-#define ACC_UPDATE_INTERVAL 50
-#define SLOW_UPDATE_INTERVAL 100
+#define ACC_UPDATE_INTERVAL 100
+#define SLOW_UPDATE_INTERVAL 200
 
 #define READ_SENSOR_INTERVAL 100
 
@@ -26,6 +26,8 @@ struct paddle
   int8_t colCoord;
   paddle(int8_t rowCoord = 0, int8_t colCoord = 0):rowCoord(rowCoord), colCoord(colCoord){} 
 };
+
+
 
 paddle paddles[10];
 
@@ -43,6 +45,8 @@ int8_t horizontalMovement = 0;
 
 long acceleration = 0;
 
+paddle cifre[10][13];
+
 unsigned long doodleFallStartTime     = 0;
 unsigned long doodleJumpStartTime     = 0;
 unsigned long doodleLastUpdateTime    = 0;
@@ -54,8 +58,132 @@ long localScore  = 0;
 
 bool inGameOverState = true;
 
+long reverseScore;
+
 void setup() 
 {
+    cifre[0][0] = paddle(0,0);
+    cifre[0][1] = paddle(0,1);
+    cifre[0][2] = paddle(0,2);
+    cifre[0][3] = paddle(1,0);
+    cifre[0][4] = paddle(1,2);
+    cifre[0][5] = paddle(2,0);
+    cifre[0][6] = paddle(2,2);
+    cifre[0][7] = paddle(3,0);
+    cifre[0][8] = paddle(3,2);
+    cifre[0][9] = paddle(4,0);
+    cifre[0][10] = paddle(4,1);
+    cifre[0][11] = paddle(4,2);
+    cifre[0][12] = paddle(-1,-1);
+    
+    cifre[1][0] = paddle(0, 2);
+    cifre[1][1] = paddle(1, 2);
+    cifre[1][2] = paddle(2, 2);
+    cifre[1][3] = paddle(3, 2);
+    cifre[1][4] = paddle(4, 2);
+    cifre[1][5] = paddle(-1,-1);
+     
+    cifre[2][0] = paddle(0,0);
+    cifre[2][1] = paddle(0,1);
+    cifre[2][2] = paddle(0,2);
+    cifre[2][3] = paddle(1,2);
+    cifre[2][4] = paddle(2,0);
+    cifre[2][5] = paddle(2,1);
+    cifre[2][6] = paddle(2,2);
+    cifre[2][7] = paddle(3,0);
+    cifre[2][8] = paddle(4,0);
+    cifre[2][9] = paddle(4,1);
+    cifre[2][10] = paddle(4,2);
+    cifre[2][11] = paddle(-1,-1);
+
+    cifre[3][0] = paddle(0,0);
+    cifre[3][1] = paddle(0,1);
+    cifre[3][2] = paddle(0,2);
+    cifre[3][3] = paddle(1,2);
+    cifre[3][4] = paddle(2,0);
+    cifre[3][5] = paddle(2,1);
+    cifre[3][6] = paddle(2,2);
+    cifre[3][7] = paddle(3,2);
+    cifre[3][8] = paddle(4,0);
+    cifre[3][9] = paddle(4,1);
+    cifre[3][10] = paddle(4,2);
+    cifre[3][11] = paddle(-1,-1);
+
+    cifre[4][0] = paddle(0,0);
+    cifre[4][1] = paddle(0,2);
+    cifre[4][2] = paddle(1,0);
+    cifre[4][3] = paddle(1,2);
+    cifre[4][4] = paddle(2,0);
+    cifre[4][5] = paddle(2,1);
+    cifre[4][6] = paddle(2,2);
+    cifre[4][7] = paddle(3,2);
+    cifre[4][8] = paddle(4,2);
+    cifre[4][9] = paddle(-1,-1);
+    
+    cifre[5][0] = paddle(0,0);
+    cifre[5][1] = paddle(0,1);
+    cifre[5][2] = paddle(0,2);
+    cifre[5][3] = paddle(1,0);
+    cifre[5][4] = paddle(2,0);
+    cifre[5][5] = paddle(2,1);
+    cifre[5][6] = paddle(2,2);
+    cifre[5][7] = paddle(3,2);
+    cifre[5][8] = paddle(4,0);
+    cifre[5][9] = paddle(4,1);
+    cifre[5][10] = paddle(4,2);
+    cifre[5][11] = paddle(-1,-1);
+    
+    cifre[6][0] = paddle(0,0);
+    cifre[6][1] = paddle(0,1);
+    cifre[6][2] = paddle(0,2);
+    cifre[6][3] = paddle(1,0);
+    cifre[6][4] = paddle(2,0);
+    cifre[6][5] = paddle(2,1);
+    cifre[6][6] = paddle(2,2);
+    cifre[6][7] = paddle(3,0);
+    cifre[6][8] = paddle(3,2);
+    cifre[6][9] = paddle(4,0);
+    cifre[6][10] = paddle(4,1);
+    cifre[6][11] = paddle(4,2);
+    cifre[6][12] = paddle(-1,-1);
+
+    cifre[7][0] = paddle(0,0);
+    cifre[7][1] = paddle(0,1);
+    cifre[7][2] = paddle(0,2);
+    cifre[7][3] = paddle(1,2);
+    cifre[7][4] = paddle(2,2);
+    cifre[7][5] = paddle(3,2);
+    cifre[7][6] = paddle(4,2); 
+    cifre[7][7] = paddle(-1,-1);
+
+    cifre[8][0] = paddle(0,0);
+    cifre[8][1] = paddle(0,1);
+    cifre[8][2] = paddle(0,2);
+    cifre[8][3] = paddle(1,0);
+    cifre[8][4] = paddle(1,2);
+    cifre[8][5] = paddle(2,0);
+    cifre[8][6] = paddle(2,1);
+    cifre[8][7] = paddle(2,2);
+    cifre[8][8] = paddle(3,0);
+    cifre[8][9] = paddle(3,2);
+    cifre[8][10] = paddle(4,0);
+    cifre[8][11] = paddle(4,1);
+    cifre[8][12] = paddle(4,2);
+
+    cifre[9][0] = paddle(0,0);
+    cifre[9][1] = paddle(0,1);
+    cifre[9][2] = paddle(0,2);
+    cifre[9][3] = paddle(1,0);
+    cifre[9][4] = paddle(1,2);
+    cifre[9][5] = paddle(2,0);
+    cifre[9][6] = paddle(2,1);
+    cifre[9][7] = paddle(2,2);
+    cifre[9][8] = paddle(3,2);
+    cifre[9][9] = paddle(4,0);
+    cifre[9][10] = paddle(4,1);
+    cifre[9][11] = paddle(4,2);
+    cifre[9][12] = paddle(-1,-1);
+   
     for (int thisPin = 0; thisPin < 8; thisPin++) 
     {
         pinMode(col[thisPin], OUTPUT); pinMode(row[thisPin], OUTPUT);
@@ -118,7 +246,8 @@ void initGame()
     }
     for (int thisPin = 0; thisPin < 8; thisPin++) 
     {
-        digitalWrite(col[thisPin], HIGH); digitalWrite(row[thisPin], LOW);
+        digitalWrite(col[thisPin], HIGH); digitalWrite(row[thisPin], LOW
+        );
     }
     
     startJumpingLittleDoodle();
@@ -133,6 +262,14 @@ void startLed(int c, int r)
     digitalWrite(row[r], LOW);
 }
 
+void digit(int8_t digit, int8_t nr)
+{
+    for(int8_t i = 0; i <= 12 && cifre[digit][i].rowCoord != -1; ++i)
+    {
+        startLed(cifre[digit][i].colCoord + nr*3 + 1, cifre[digit][i].rowCoord);
+    }
+}
+
 void loop() 
 {
     if (!inGameOverState)
@@ -143,6 +280,12 @@ void loop()
     }
     else
     {
+        long sc = globalScore;
+        sc = sc/10;
+        digit(sc%10, 1);
+        sc = sc/10;
+        if(sc != 0)
+          digit(sc%10, 0);
         if (gameShouldStart())
         {
             startGame();
@@ -164,11 +307,23 @@ void enterGameOverState() //
     setGameOverState();
 }
 
+void getRevScore()
+{
+    long sc = globalScore;
+    reverseScore = 0;
+    while(sc)
+    {
+      reverseScore = reverseScore*10 + sc%10;
+      sc /= 10;
+    }
+}
+
 void setGameOverState() // make the matrix red 
 {
+    getRevScore();
     for (int thisPin = 0; thisPin < 8; thisPin++) 
     {
-        digitalWrite(col[thisPin], LOW); digitalWrite(row[thisPin], HIGH);
+        digitalWrite(col[thisPin], HIGH); digitalWrite(row[thisPin], LOW);
     }
 }
 
