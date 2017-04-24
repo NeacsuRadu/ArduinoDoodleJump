@@ -29,7 +29,6 @@ struct paddle
 
 paddle paddles[10];
 
-
 const uint8_t row[8] = {2, 7, 19, 5, 13, 18, 12, 16};
 const uint8_t col[8] = {6, 11, 10, 3, 17, 4, 8, 9};
 
@@ -178,13 +177,13 @@ void startGame()
     initGame();
 }
 
-void enterGameOverState()
+void enterGameOverState() // 
 {
     inGameOverState = true;
     setGameOverState();
 }
 
-void setGameOverState()
+void setGameOverState() // make the matrix red 
 {
     for (int thisPin = 0; thisPin < 8; thisPin++) 
     {
@@ -205,7 +204,7 @@ void startJumpingLittleDoodle()
     doodleState |= DOODLE_JUMPING;
 }
 
-bool doodleShouldJump()
+bool doodleShouldJump() // check if doodle can jump, i.e has a paddle below him 
 {
     for(int i = 0; i < last; ++i)
     {
@@ -215,7 +214,7 @@ bool doodleShouldJump()
     return false;
 }
 
-bool shouldAddMorePaddles()
+bool shouldAddMorePaddles() 
 {
     if(paddles[last-1].rowCoord >= 0)
     {
@@ -224,12 +223,12 @@ bool shouldAddMorePaddles()
     return false;
 }
 
-void addModePaddles()
+void addModePaddles() // generate a new paddle and add it into the vector 
 {
     push_back(generatePaddleBetween(-distanceBetweenPaddles, 0, 0, 7));
 }
 
-void updatePaddles()
+void updatePaddles() // just increasing the paddles' row coord and pop the ones that are out of the matrix 
 {
     while(paddles[0].rowCoord >= 7)
     {
@@ -244,7 +243,7 @@ void updatePaddles()
 void updateHorizontalPosition()
 {
     doodleColCoord += horizontalMovement;
-    if(doodleColCoord == -1)
+    if(doodleColCoord == -1) // if doodle is out of bounds we make it appear on the other side 
     {
         doodleColCoord = 7;
     }
@@ -256,17 +255,17 @@ void updateHorizontalPosition()
 
 void updateDoodlePosition()
 {
-  updateHorizontalPosition();
-  if((doodleState & DOODLE_JUMPING))
+  updateHorizontalPosition(); // we update the horizontal position based on the sensor reading 
+  if((doodleState & DOODLE_JUMPING)) // doodle is jumping 
   {
-      if(millis() - doodleJumpStartTime > JUMP_DURATION)
+      if(millis() - doodleJumpStartTime > JUMP_DURATION) // jump is done, start falling 
       {
           doodleState &= !DOODLE_JUMPING;
           doodleLastUpdateTime = millis();
           doodleFallStartTime = millis();
           acceleration = ACC_UPDATE_INTERVAL;
       }
-      else if(millis() - doodleJumpStartTime > SLOW_JUMP_DURATION)
+      else if(millis() - doodleJumpStartTime > SLOW_JUMP_DURATION) // changing the update interval, realistic jump :D 
       {
           doodleLastUpdateTime = millis();
       }
@@ -275,14 +274,14 @@ void updateDoodlePosition()
           acceleration = SLOW_UPDATE_INTERVAL;
       }
 
-      if(millis() - doodleLastUpdateTime > acceleration)
+      if(millis() - doodleLastUpdateTime > acceleration) //updating the doodle position 
       {
           localScore += 5;
-          if(doodleRowCoord > 4)
+          if(doodleRowCoord > 4) // if doodle is below middle we decrease doodle's row coord 
           { 
               --doodleRowCoord;
           }
-          else
+          else // doodle is above, we increase paddles' row, doodle remains in position, same visual result
           {
               updatePaddles();
               if(shouldAddMorePaddles())
@@ -293,7 +292,7 @@ void updateDoodlePosition()
           doodleLastUpdateTime = millis();
       }
   }
-  else
+  else // doodle is falling 
   {
      if(doodleRowCoord == 7)
      {
@@ -331,11 +330,11 @@ int8_t minn(int8_t m1, int8_t m2)
 
 void updateDifficulty()
 {
-    if(globalScore % 250 == 0)
+    if (globalScore % 250 == 0) // change the horizontal direction by 180 deg
     {
         sidewaysDirection *= (-1);
     }
-    if(globalScore % 200 == 0)
+    if (globalScore % 200 == 0) // increases the maximum distance between paddles 
     {
         distanceBetweenPaddles = minn(10, distanceBetweenPaddles + 1);
     }
@@ -344,9 +343,9 @@ void updateDifficulty()
 void displayObjects()
 {
     startLed(doodleColCoord, doodleRowCoord);
-    for(int i = 0; i < last; ++i)
+    for (int i = 0; i < last; ++i)
     {
-        if(paddles[i].rowCoord >= 0)
+        if (paddles[i].rowCoord >= 0)
         {
             startLed(paddles[i].colCoord, paddles[i].rowCoord);
             startLed(paddles[i].colCoord + 1, paddles[i].rowCoord);
@@ -356,16 +355,16 @@ void displayObjects()
 
 void readSensors()
 {
-    if(millis() - doodleLastReadOnSensor > READ_SENSOR_INTERVAL)
+    if (millis() - doodleLastReadOnSensor > READ_SENSOR_INTERVAL)// we read the sensors periodically :D 
     {
         doodleLastReadOnSensor = millis();
         int reading = analogRead(YAXIS);
 
-        if(reading < 100)
+        if (reading < 100) // updating the variable wich contains the horizontal movement
         {
-            horizontalMovement = -1 * sidewaysDirection;
+            horizontalMovement = -1 * sidewaysDirection; // sidewaysDirection changes the direction depending on difficulty
         }
-        else if(reading > 900)
+        else if (reading > 900)
         {
             horizontalMovement = 1 * sidewaysDirection;
         }
